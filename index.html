@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Live Cam</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b5cff">
+
+<style>
+body {
+    margin: 0;
+    background: #0f172a;
+    color: #fff;
+    font-family: Arial, sans-serif;
+}
+header {
+    background: #0b5cff;
+    padding: 12px;
+    text-align: center;
+    font-weight: bold;
+}
+#controls {
+    padding: 10px;
+    text-align: center;
+}
+button {
+    padding: 10px 16px;
+    border: none;
+    background: #0b5cff;
+    color: #fff;
+    font-size: 15px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+button:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+#link {
+    margin-top: 10px;
+    word-break: break-all;
+    font-size: 14px;
+    color: #22c55e;
+}
+input {
+    padding: 10px;
+    border: 1px solid #334155;
+    background: #1e293b;
+    color: #fff;
+    font-size: 14px;
+    border-radius: 6px;
+    margin: 5px;
+    width: 200px;
+}
+#map {
+    width: 100%;
+    height: 300px;
+    margin-top: 10px;
+}
+.info-box {
+    background: #1e293b;
+    padding: 10px;
+    margin: 10px;
+    border-radius: 8px;
+    text-align: left;
+}
+#videoContainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#videos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px;
+    justify-content: center;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+#videos.dual-video {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+}
+
+.video-wrapper {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+}
+video {
+    width: 200px;
+    max-width: 100%;
+    background: black;
+    border-radius: 8px;
+    display: block;
+}
+
+#videos.dual-video video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.status {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-top: 5px;
+}
+#chat {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    height: auto;
+    max-height: 45%;
+    background: transparent;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    border: none;
+    z-index: 1000;
+    pointer-events: none;
+}
+#chatHeader {
+    display: none;
+}
+#chatMessages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+}
+.message {
+    margin-bottom: 4px;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+    word-wrap: break-word;
+    color: #ffffff;
+    text-shadow: 0 0 4px rgba(0,0,0,0.8);
+    font-size: 14px;
+}
+.message.sent {
+    margin-left: 20px;
+    text-align: right;
+}
+.message.received {
+    margin-right: 20px;
+    text-align: left;
+}
+.message img {
+    max-width: 70%;
+    border-radius: 6px;
+    display: block;
+    margin: 2px 0;
+}
+#chatInput {
+    display: flex;
+    gap: 5px;
+    margin-top: 6px;
+    pointer-events: auto;
+    align-items: center;
+}
+#chatInput input {
+    flex: 1;
+    margin: 0;
+    background: rgba(15,23,42,0.9);
+}
+#chatInput button {
+    margin: 0;
+    padding: 8px 10px;
+}
+
+/* Layout principal: vídeo e localização */
+#mainLayout {
+    width: 100%;
+}
+
+/* Desktop: metade vídeo+endereço, metade mapa+endereço */
+@media (min-width: 769px) {
+    #mainLayout {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        height: calc(100vh - 160px);
+        box-sizing: border-box;
+    }
+    #leftPane,
+    #rightPane {
+        flex: 1;
+        max-width: 50%;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+    }
+    #videoContainer {
+        flex: 1;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+    #videos {
+        flex: 1;
+    }
+    #addressLeft,
+    #addressRight {
+        margin-top: 10px;
+    }
+    #map {
+        width: 100%;
+        height: calc(100% - 80px);
+        margin-top: 10px;
+        flex: 1;
+    }
+}
+
+/* Botão de trocar câmera sobre o vídeo do destinatário */
+#btnSwitchCamera {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(15,23,42,0.8);
+    font-size: 13px;
+    padding: 6px 10px;
+    z-index: 20;
+}
+
+@media (max-width: 768px) {
+    #controls {
+        padding: 10px 5px;
+    }
+    
+    button {
+        padding: 12px 14px;
+        font-size: 14px;
+        margin: 3px;
+        width: auto;
+    }
+    
+    input {
+        width: calc(100% - 20px);
+        max-width: 300px;
+        margin: 5px auto;
+        display: block;
+    }
+    
+    #controls > div {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    video {
+        width: calc(100% - 10px);
+        min-width: 150px;
+    }
+    
+    #chat {
+        bottom: 5px;
+        left: 5px;
+        right: 5px;
+        max-height: 40%;
+    }
+    
+    #map {
+        height: 200px;
+    }
+    
+    .info-box {
+        font-size: 13px;
+        margin: 5px;
+        padding: 8px;
+    }
+    
+    #videos {
+        padding: 5px;
+    }
+
+    /* No celular, mantém layout em coluna e evita endereço duplicado */
+    #mainLayout {
+        display: block;
+    }
+    #addressRight {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    header {
+        font-size: 14px;
+        padding: 10px;
+    }
+    
+    video {
+        width: 100%;
+    }
+    
+    button {
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+    
+    #link {
+        font-size: 12px;
+        padding: 0 10px;
+    }
+}
+</style>
+</head>
+
+<body>
+<header>📡 Live Cam</header>
+
+<div id="controls">
+    <button id="btnLink" disabled>🔗 Gerar Link</button>
+    <button id="btnCopy" disabled>📋 Copiar Link</button>
+    <button id="btnDeleteLink" disabled>❌ Excluir Link</button>
+    <button id="btnMyVideo" disabled>📹 Meu Vídeo</button>
+    <button id="btnRecord" disabled>⏺️ Gravar Vídeo</button>
+    <button id="btnToggleChat">💬 Ocultar Chat</button>
+    <!-- Botão será movido para cima do vídeo do destinatário -->
+    <button id="btnSwitchCamera" style="display:none;">🔄 Trocar Câmera</button>
+    <div class="status" id="status">Inicializando conexão...</div>
+    <div id="link"></div>
+    
+    <div style="margin-top: 15px;">
+        <input type="tel" id="recipientPhone" placeholder="+55 (DDD) 9XXXX-XXXX">
+        <button id="btnSendWhatsApp" disabled>📱 WhatsApp</button>
+        <button id="btnSendSMS" disabled>💬 SMS</button>
+    </div>
+</div>
+
+<div id="mainLayout">
+    <div id="leftPane">
+        <div id="videoContainer">
+            <div id="videos"></div>
+            <div id="chat">
+                <div id="chatHeader">💬 Chat</div>
+                <div id="chatMessages"></div>
+                <div id="chatInput">
+                    <button id="btnImage" title="Enviar imagem">📎</button>
+                    <input type="file" id="imageInput" accept="image/jpeg,image/jpg,image/gif" style="display:none;">
+                    <input type="text" id="messageInput" placeholder="Digite uma mensagem...">
+                    <button id="btnSend">Enviar</button>
+                </div>
+            </div>
+        </div>
+        <div id="addressLeft"></div>
+    </div>
+    <div id="rightPane">
+        <div id="addressRight"></div>
+        <div id="map"></div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+<script>
+const videos = document.getElementById("videos");
+const linkDiv = document.getElementById("link");
+const btnLink = document.getElementById("btnLink");
+const btnCopy = document.getElementById("btnCopy");
+const btnDeleteLink = document.getElementById("btnDeleteLink");
+const btnSendWhatsApp = document.getElementById("btnSendWhatsApp");
+const btnSendSMS = document.getElementById("btnSendSMS");
+const statusEl = document.getElementById("status");
+const addressLeft = document.getElementById("addressLeft");
+const addressRight = document.getElementById("addressRight");
+const mapContainer = document.getElementById("map");
+const recipientPhone = document.getElementById("recipientPhone");
+
+// Máscara de telefone: +55 fixo, DDD (2 dígitos) e telefone com 9 dígitos
+recipientPhone.addEventListener("input", () => {
+    let digits = recipientPhone.value.replace(/\D/g, "");
+
+    // Garante que sempre comece com 55
+    if (!digits.startsWith("55")) {
+        digits = "55" + digits;
+    }
+
+    // Limita ao total necessário: 55 + 2 DDD + 9 dígitos = 13
+    digits = digits.slice(0, 13);
+
+    const country = "+55";
+    const ddd = digits.slice(2, 4);
+    const firstDigit = digits.slice(4, 5);      // 9
+    const middle = digits.slice(5, 9);          // XXXX
+    const last = digits.slice(9, 13);           // XXXX
+
+    let formatted = country;
+
+    if (ddd) {
+        formatted += ` (${ddd}`;
+        if (ddd.length === 2) {
+            formatted += ") ";
+        } else {
+            formatted += "";
+        }
+    }
+
+    if (firstDigit) {
+        formatted += firstDigit;
+    }
+
+    if (middle) {
+        formatted += middle;
+    }
+
+    if (last) {
+        formatted += `-${last}`;
+    }
+
+    recipientPhone.value = formatted;
+});
+const btnMyVideo = document.getElementById("btnMyVideo");
+const btnRecord = document.getElementById("btnRecord");
+const chatMessages = document.getElementById("chatMessages");
+const messageInput = document.getElementById("messageInput");
+const btnSend = document.getElementById("btnSend");
+const btnToggleChat = document.getElementById("btnToggleChat");
+const chatBox = document.getElementById("chat");
+const btnSwitchCamera = document.getElementById("btnSwitchCamera");
+const btnImage = document.getElementById("btnImage");
+const imageInput = document.getElementById("imageInput");
+
+let peerId;
+let localStream;
+let senderStream = null;
+let generatedLink = "";
+let localVideoAdded = false;
+let remoteVideoAdded = false;
+let localVideoElement = null;
+let remoteVideoElement = null;
+let videoVisible = true;
+let isRecording = false;
+let mediaRecorder = null;
+let recordedChunks = [];
+let dataConnection = null;
+let chatVisible = true;
+let currentCall = null;
+let usingFrontCamera = true;
+let whatsappWindow = null;
+let senderVideoActive = false;
+let senderVideoElement = null;
+
+const params = new URLSearchParams(location.search);
+const room = params.get("r");
+
+// Restaurar peerId salvo (para manter o mesmo link entre recarregamentos)
+const storedPeerId = localStorage.getItem("livecam_peerId");
+const peer = new Peer(storedPeerId || undefined);
+
+// Restaurar link gerado previamente (se existir)
+let storedLink = localStorage.getItem("livecam_link");
+if (storedLink && !room) {
+    generatedLink = storedLink;
+    linkDiv.innerText = storedLink;
+    btnCopy.disabled = false;
+    btnSendWhatsApp.disabled = false;
+    btnSendSMS.disabled = false;
+    btnDeleteLink.disabled = false;
+}
+
+/* Abrir câmera (apenas destinatário) */
+async function startCamera() {
+    if (localStream) return localStream;
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: usingFrontCamera ? "user" : "environment" },
+            audio: true
+        });
+        if (!localVideoAdded) {
+            addVideo(localStream, true, true);
+            localVideoAdded = true;
+        }
+        return localStream;
+    } catch (error) {
+        statusEl.innerText = "⚠️ Erro ao acessar câmera: " + error.message;
+        statusEl.style.color = "#ef4444";
+        console.error("Camera error:", error);
+        throw error;
+    }
+}
+
+/* Encerrar câmera local (usado pelo destinatário ao receber comando) */
+function stopLocalCamera() {
+    try {
+        if (localStream) {
+            localStream.getTracks().forEach(t => t.stop());
+            localStream = null;
+        }
+        if (localVideoElement) {
+            localVideoElement.srcObject = null;
+            localVideoElement.style.display = 'none';
+        }
+        videoVisible = false;
+        statusEl.innerText = 'Câmera encerrada pelo remetente.';
+    } catch (e) {
+        console.error("Erro ao encerrar câmera local:", e);
+    }
+}
+
+/* Abrir mídia do remetente (áudio apenas) */
+async function startSenderMedia() {
+    if (senderStream) {
+        return senderStream;
+    }
+    try {
+        senderStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+        return senderStream;
+    } catch (error) {
+        console.error("Erro ao acessar mídia do remetente:", error);
+        statusEl.innerText = "⚠️ Erro ao acessar mídia do remetente";
+        throw error;
+    }
+}
+
+/* Adicionar vídeo */
+function addVideo(stream, muted = false, isLocal = false, isSender = false) {
+    // Garantir apenas um vídeo por tipo
+    if (isLocal && localVideoAdded) return;
+    if (!isLocal && !isSender && remoteVideoAdded) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "video-wrapper";
+
+    const video = document.createElement("video");
+    video.srcObject = stream;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = muted;
+
+    wrapper.appendChild(video);
+    
+    if (!isLocal && !isSender) {
+        videos.innerHTML = ""; // limpar ao adicionar o primeiro vídeo remoto
+    }
+    
+    videos.appendChild(wrapper);
+
+    if (isLocal) {
+        localVideoAdded = true;
+        localVideoElement = video;
+
+        // Somente o destinatário (quem acessa o link) vê o botão de trocar câmera
+        if (room) {
+            btnSwitchCamera.style.display = "block";
+            wrapper.appendChild(btnSwitchCamera);
+        }
+    } else if (isSender) {
+        senderVideoActive = true;
+        senderVideoElement = video;
+        videos.classList.add('dual-video');
+    } else {
+        remoteVideoAdded = true;
+        remoteVideoElement = video;
+    }
+}
+
+/* Enviar mensagem no chat */
+function sendMessage(text) {
+    if (!text.trim() || !dataConnection) return;
+    
+    dataConnection.send({ type: 'chat', message: text });
+    
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'message sent';
+    msgDiv.textContent = text;
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    messageInput.value = '';
+}
+
+/* Enviar imagem no chat */
+function sendImage(file) {
+    if (!file || !dataConnection) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        const dataUrl = reader.result;
+        dataConnection.send({ type: 'image', dataUrl });
+
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message sent';
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        msgDiv.appendChild(img);
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    };
+    reader.readAsDataURL(file);
+}
+
+/* Receber imagem no chat */
+function receiveImage(dataUrl) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'message received';
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    msgDiv.appendChild(img);
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/* Receber mensagem no chat */
+function receiveMessage(text) {
+    if (!chatVisible) {
+        chatBox.style.display = 'flex';
+        chatVisible = true;
+        if (btnToggleChat) {
+            btnToggleChat.textContent = '💬 Ocultar Chat';
+        }
+    }
+
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'message received';
+    msgDiv.textContent = text;
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/* Peer conectado */
+peer.on("open", async id => {
+    peerId = id;
+    // Salva peerId se ainda não estiver salvo (para manter o mesmo entre recarregamentos)
+    if (!storedPeerId && !room) {
+        localStorage.setItem("livecam_peerId", peerId);
+    }
+
+    // Corrige habilitação de geração de link:
+    // - Quem NÃO tem ?r= (sender) pode gerar link
+    // - Quem tem ?r= (destinatário) não usa geração de link
+    if (!room) {
+        btnLink.disabled = false;
+        if (!generatedLink) {
+            statusEl.innerText = "Conectado. Aguardando visitante...";
+        } else {
+            statusEl.innerText = "Link ativo. Aguardando visitante...";
+        }
+    } else {
+        // Ocultar todos os botões de controle para o destinatário
+        btnLink.style.display = 'none';
+        btnCopy.style.display = 'none';
+        btnDeleteLink.style.display = 'none';
+        btnMyVideo.style.display = 'none';
+        btnRecord.style.display = 'none';
+        btnSendWhatsApp.style.display = 'none';
+        btnSendSMS.style.display = 'none';
+        recipientPhone.style.display = 'none';
+        linkDiv.style.display = 'none';
+    }
+
+    if (room) {
+        try {
+            await startCamera();
+            const call = peer.call(room, localStream);
+            currentCall = call;
+            // O sender só envia áudio (ou áudio + vídeo opcional), o destinatário deve continuar vendo apenas a própria câmera
+            call.on("stream", remoteStream => {
+                const hasVideo = remoteStream.getVideoTracks().length > 0;
+                const hasAudio = remoteStream.getAudioTracks().length > 0;
+                
+                if (hasVideo) {
+                    // Exibir vídeo do sender
+                    addVideo(remoteStream, false, false, true);
+                } else if (hasAudio) {
+                    // Apenas áudio
+                    const audioElement = new Audio();
+                    audioElement.srcObject = remoteStream;
+                    audioElement.autoplay = true;
+                    audioElement.play().catch(() => {});
+                }
+            });
+            
+            // Enviar localização para o sender
+            dataConnection = peer.connect(room);
+            dataConnection.on('open', () => {
+                navigator.geolocation.getCurrentPosition(async position => {
+                    const { latitude, longitude } = position.coords;
+                    
+                    let address = "Carregando endereço...";
+                    let via = "";
+                    let numero = "";
+                    let bairro = "";
+                    let municipio = "";
+                    let cep = "";
+
+                    try {
+                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+                        const data = await response.json();
+                        address = data.display_name || "Endereço não encontrado";
+
+                        const addr = data.address || {};
+                        via = addr.road || addr.pedestrian || addr.cycleway || addr.footway || "";
+                        numero = addr.house_number || "";
+                        bairro = addr.suburb || addr.neighbourhood || addr.city_district || "";
+                        municipio = addr.city || addr.town || addr.village || addr.municipality || "";
+                        cep = addr.postcode || "";
+                    } catch (e) {
+                        address = "Erro ao buscar endereço";
+                    }
+                    
+                    dataConnection.send({ 
+                        type: 'location', 
+                        latitude, 
+                        longitude, 
+                        address,
+                        via,
+                        numero,
+                        bairro,
+                        municipio,
+                        cep
+                    });
+                });
+            });
+            
+            dataConnection.on('data', data => {
+                if (data.type === 'chat') {
+                    receiveMessage(data.message);
+                } else if (data.type === 'image') {
+                    receiveImage(data.dataUrl);
+                } else if (data.type === 'stop_camera') {
+                    // Remetente solicitou que o destinatário encerre a câmera
+                    stopLocalCamera();
+                } else if (data.type === 'sender_video_stopped') {
+                    // Sender parou de compartilhar seu vídeo
+                    if (senderVideoElement) {
+                        senderVideoElement.srcObject = null;
+                        senderVideoElement.parentElement.remove();
+                        senderVideoActive = false;
+                        senderVideoElement = null;
+                        videos.classList.remove('dual-video');
+                    }
+                }
+            });
+        } catch (error) {
+            statusEl.innerText = "Erro ao conectar com câmera";
+        }
+    }
+});
+
+/* Receber chamada (sender recebe vídeo do destinatário) */
+peer.on("call", async call => {
+    try {
+        // Sender envia áudio e opcionalmente vídeo (conforme escolha)
+        const mediaStream = senderStream || await startSenderMedia();
+        call.answer(mediaStream);
+        currentCall = call;
+        call.on("stream", remoteStream => {
+            // Apenas o vídeo/áudio do destinatário é exibido no sender
+            addVideo(remoteStream, false, false, false);
+            statusEl.innerText = "Visitante conectado";
+            btnMyVideo.disabled = false;
+        });
+    } catch (error) {
+        console.error("Erro ao responder chamada:", error);
+        statusEl.innerText = "Erro ao responder chamada";
+    }
+});
+
+/* Receber dados de localização e chat (sender) */
+peer.on('connection', conn => {
+    dataConnection = conn;
+    conn.on('data', data => {
+        if (data.type === 'location') {
+            const via = data.via || '';
+            const numero = data.numero || '';
+            const bairro = data.bairro || '';
+            const municipio = data.municipio || '';
+            const cep = data.cep || '';
+
+            const infoHtml = `
+                <div class="info-box">
+                    <strong>📍 Localização do Visitante</strong><br>
+                    <strong>Endereço:</strong> ${data.address}<br>
+                    <strong>Via:</strong> ${via}<br>
+                    <strong>Número:</strong> ${numero}<br>
+                    <strong>Bairro:</strong> ${bairro}<br>
+                    <strong>Município:</strong> ${municipio}<br>
+                    <strong>CEP:</strong> ${cep}<br>
+                    <strong>Latitude:</strong> ${data.latitude.toFixed(6)}<br>
+                    <strong>Longitude:</strong> ${data.longitude.toFixed(6)}
+                </div>
+            `;
+
+            // Endereço ao lado da câmera
+            if (addressLeft) {
+                addressLeft.innerHTML = infoHtml;
+            }
+            // Endereço ao lado do mapa (desktop)
+            if (addressRight) {
+                addressRight.innerHTML = infoHtml;
+            }
+
+            if (mapContainer) {
+                mapContainer.innerHTML = '';
+                const map = L.map(mapContainer).setView([data.latitude, data.longitude], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+            L.marker([data.latitude, data.longitude]).addTo(map)
+                .bindPopup('Visitante está aqui')
+                .openPopup();
+            }
+
+            btnRecord.disabled = false;
+        } else if (data.type === 'chat') {
+            receiveMessage(data.message);
+        } else if (data.type === 'image') {
+            receiveImage(data.dataUrl);
+        } else if (data.type === 'sender_video_stopped') {
+            // Sender parou de compartilhar seu vídeo
+            if (senderVideoElement) {
+                senderVideoElement.srcObject = null;
+                senderVideoElement.parentElement.remove();
+                senderVideoActive = false;
+                senderVideoElement = null;
+                videos.classList.remove('dual-video');
+            }
+        }
+    });
+});
+
+/* Gerar link */
+btnLink.onclick = async () => {
+    generatedLink = `${location.origin}${location.pathname}?r=${peerId}`;
+    linkDiv.innerText = generatedLink;
+    statusEl.innerText = "Link gerado. Aguardando acesso...";
+    btnCopy.disabled = false;
+    btnSendWhatsApp.disabled = false;
+    btnSendSMS.disabled = false;
+    btnDeleteLink.disabled = false;
+    // persiste link para recarregamentos futuros
+    localStorage.setItem("livecam_link", generatedLink);
+};
+
+/* Copiar link */
+btnCopy.onclick = () => {
+    if (!generatedLink) return;
+    navigator.clipboard.writeText(generatedLink);
+    statusEl.innerText = "Link copiado!";
+};
+
+/* Excluir link (tornar inválido até gerar outro) */
+btnDeleteLink.onclick = () => {
+    if (!generatedLink) return;
+
+    // Avisa o destinatário para encerrar a câmera, se houver conexão de dados
+    try {
+        if (dataConnection && dataConnection.open) {
+            dataConnection.send({ type: 'stop_camera' });
+        }
+    } catch (e) {
+        console.error("Erro ao enviar comando de stop_camera:", e);
+    }
+
+    // Remove dados persistidos
+    localStorage.removeItem("livecam_link");
+    localStorage.removeItem("livecam_peerId");
+    generatedLink = "";
+    linkDiv.innerText = "";
+    btnCopy.disabled = true;
+    btnSendWhatsApp.disabled = true;
+    btnSendSMS.disabled = true;
+    btnDeleteLink.disabled = true;
+    statusEl.innerText = "Link excluído. Recarregando para gerar um novo...";
+    // Fecha peer e recarrega para obter novo ID
+    try {
+        peer.destroy();
+    } catch (e) {}
+    setTimeout(() => {
+        location.reload();
+    }, 500);
+};
+
+/* Enviar WhatsApp */
+btnSendWhatsApp.onclick = () => {
+    const phone = recipientPhone.value.replace(/\D/g, '');
+    // Esperado: 55 + DDD (2) + 9 dígitos = 13 dígitos
+    if (!phone || phone.length !== 13) {
+        alert("Digite o telefone completo no formato +55 (DDD) 9XXXX-XXXX");
+        return;
+    }
+    const message = encodeURIComponent(`Acesse este link: ${generatedLink}`);
+    const url = `https://wa.me/${phone}?text=${message}`;
+
+    // Reutiliza a mesma aba/janela do WhatsApp se já estiver aberta
+    if (!whatsappWindow || whatsappWindow.closed) {
+        whatsappWindow = window.open(url, 'whatsappWindow');
+    } else {
+        whatsappWindow.location.href = url;
+        whatsappWindow.focus();
+    }
+};
+
+/* Enviar SMS */
+btnSendSMS.onclick = () => {
+    const phone = recipientPhone.value.replace(/\D/g, '');
+    // Esperado: 55 + DDD (2) + 9 dígitos = 13 dígitos
+    if (!phone || phone.length !== 13) {
+        alert("Digite o telefone completo no formato +55 (DDD) 9XXXX-XXXX");
+        return;
+    }
+    const message = encodeURIComponent(`Acesse este link: ${generatedLink}`);
+    window.open(`sms:${phone}?body=${message}`);
+};
+
+
+
+/* Gravar vídeo (sender grava o vídeo do destinatário) */
+btnRecord.onclick = () => {
+    if (!isRecording && remoteVideoElement && remoteVideoElement.srcObject) {
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(remoteVideoElement.srcObject);
+        
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+        };
+        
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gravacao_${Date.now()}.webm`;
+            a.click();
+            statusEl.innerText = 'Gravação salva!';
+        };
+        
+        mediaRecorder.start();
+        isRecording = true;
+        btnRecord.textContent = '⏹️ Parar Gravação';
+        btnRecord.style.background = '#ef4444';
+        statusEl.innerText = 'Gravando...';
+    } else if (isRecording && mediaRecorder) {
+        mediaRecorder.stop();
+        isRecording = false;
+        btnRecord.textContent = '⏺️ Gravar Vídeo';
+        btnRecord.style.background = '#0b5cff';
+
+        // Ao encerrar a gravação, solicitar que o destinatário encerre a câmera
+        try {
+            if (dataConnection && dataConnection.open) {
+                dataConnection.send({ type: 'stop_camera' });
+            }
+        } catch (e) {
+            console.error("Erro ao enviar comando de stop_camera ao parar gravação:", e);
+        }
+    }
+};
+
+/* Chat */
+btnSend.onclick = () => {
+    sendMessage(messageInput.value);
+};
+
+messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        sendMessage(messageInput.value);
+    }
+});
+
+/* Enviar imagem via botão */
+btnImage.onclick = () => {
+    imageInput.click();
+};
+
+imageInput.addEventListener('change', () => {
+    const file = imageInput.files[0];
+    if (file) {
+        const type = file.type.toLowerCase();
+        if (type === 'image/jpeg' || type === 'image/jpg' || type === 'image/gif') {
+            sendImage(file);
+        } else {
+            alert('Formato de imagem não suportado. Use JPEG, JPG ou GIF.');
+        }
+    }
+    imageInput.value = '';
+});
+
+/* Toggle Chat */
+btnToggleChat.onclick = () => {
+    chatVisible = !chatVisible;
+    chatBox.style.display = chatVisible ? 'flex' : 'none';
+    btnToggleChat.textContent = chatVisible ? '💬 Ocultar Chat' : '💬 Mostrar Chat';
+};
+
+/* Meu Vídeo - Sender compartilha sua câmera */
+btnMyVideo.onclick = async () => {
+    if (room) return; // apenas sender
+    
+    if (!senderStream || !senderStream.getVideoTracks().length) {
+        // Ativar vídeo do sender
+        try {
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            });
+            
+            if (senderStream) {
+                senderStream.getTracks().forEach(t => t.stop());
+            }
+            
+            senderStream = newStream;
+            
+            // Atualizar tracks na chamada
+            if (currentCall && currentCall.peerConnection) {
+                const videoTrack = senderStream.getVideoTracks()[0];
+                const audioTrack = senderStream.getAudioTracks()[0];
+                
+                const senders = currentCall.peerConnection.getSenders();
+                senders.forEach(sender => {
+                    if (sender.track) {
+                        if (sender.track.kind === "video") {
+                            sender.replaceTrack(videoTrack);
+                        } else if (sender.track.kind === "audio") {
+                            sender.replaceTrack(audioTrack);
+                        }
+                    }
+                });
+            }
+            
+            btnMyVideo.textContent = '📹 Parar Meu Vídeo';
+            btnMyVideo.style.background = '#ef4444';
+            statusEl.innerText = 'Compartilhando seu vídeo...';
+        } catch (err) {
+            console.error("Erro ao ativar vídeo:", err);
+            statusEl.innerText = "Erro ao ativar vídeo";
+        }
+    } else {
+        // Desativar vídeo do sender
+        try {
+            const audioOnlyStream = await navigator.mediaDevices.getUserMedia({
+                video: false,
+                audio: true
+            });
+            
+            if (senderStream) {
+                senderStream.getTracks().forEach(t => t.stop());
+            }
+            
+            senderStream = audioOnlyStream;
+            
+            // Atualizar tracks na chamada
+            if (currentCall && currentCall.peerConnection) {
+                const audioTrack = senderStream.getAudioTracks()[0];
+                
+                const senders = currentCall.peerConnection.getSenders();
+                senders.forEach(sender => {
+                    if (sender.track) {
+                        if (sender.track.kind === "video") {
+                            sender.replaceTrack(null);
+                        } else if (sender.track.kind === "audio") {
+                            sender.replaceTrack(audioTrack);
+                        }
+                    }
+                });
+            }
+            
+            // Notificar destinatário para remover vídeo do sender
+            if (dataConnection && dataConnection.open) {
+                dataConnection.send({ type: 'sender_video_stopped' });
+            }
+            
+            btnMyVideo.textContent = '📹 Meu Vídeo';
+            btnMyVideo.style.background = '#0b5cff';
+            statusEl.innerText = 'Vídeo desativado';
+        } catch (err) {
+            console.error("Erro ao desativar vídeo:", err);
+        }
+    }
+};
+
+/* Trocar câmera (apenas destinatário) */
+btnSwitchCamera.onclick = async () => {
+    if (!room) return; // apenas quem acessa o link (destinatário)
+    try {
+        usingFrontCamera = !usingFrontCamera;
+        const newStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: usingFrontCamera ? "user" : "environment" },
+            audio: true,
+        });
+
+        if (localStream) {
+            localStream.getTracks().forEach(t => t.stop());
+        }
+
+        localStream = newStream;
+
+        if (localVideoElement) {
+            localVideoElement.srcObject = localStream;
+        }
+
+        if (currentCall && currentCall.peerConnection) {
+            const videoTrack = localStream.getVideoTracks()[0];
+            const audioTrack = localStream.getAudioTracks()[0];
+            currentCall.peerConnection.getSenders().forEach(sender => {
+                if (sender.track && sender.track.kind === "video") {
+                    sender.replaceTrack(videoTrack);
+                } else if (sender.track && sender.track.kind === "audio") {
+                    sender.replaceTrack(audioTrack);
+                }
+            });
+        }
+    } catch (err) {
+        console.error("Erro ao trocar câmera:", err);
+        statusEl.innerText = "Erro ao trocar câmera";
+    }
+};
+</script>
+
+</body>
+</html>
