@@ -6,6 +6,8 @@ export class LocationManager {
         this.addressRight = document.getElementById("addressRight");
         this.mapContainer = document.getElementById("map");
         this.map = null;
+        this.isExpanded = false;
+        this.currentLocationData = null;
     }
 
     async getCurrentLocation() {
@@ -39,34 +41,75 @@ export class LocationManager {
     }
 
     displayLocation(latitude, longitude, addressData) {
+        this.currentLocationData = { latitude, longitude, addressData };
+        this.renderLocation();
+    }
+
+    renderLocation() {
+        if (!this.currentLocationData) return;
+        
+        const { latitude, longitude, addressData } = this.currentLocationData;
         const { address, via, numero, bairro, municipio, cep } = addressData;
         
-        const infoHtml = `
-            <div class="info-box">
-                <strong>📍 Localização do Visitante</strong><br>
-                <strong>Endereço:</strong> ${address}<br>
-                <strong>Via:</strong> ${via}<br>
-                <strong>Número:</strong> ${numero}<br>
-                <strong>Bairro:</strong> ${bairro}<br>
-                <strong>Município:</strong> ${municipio}<br>
-                <strong>CEP:</strong> ${cep}<br>
-                <strong>Latitude:</strong> ${latitude.toFixed(6)}<br>
-                <strong>Longitude:</strong> ${longitude.toFixed(6)}
-            </div>
-        `;
+        let infoHtml;
+        if (this.isExpanded) {
+            infoHtml = `
+                <div class="info-box">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <strong>📍 Localização do Visitante</strong>
+                        <button id="btnToggleLocation" style="padding: 4px 8px; font-size: 12px;">➖ Ocultar</button>
+                    </div>
+                    <strong>Endereço:</strong> ${address}<br>
+                    <strong>Via:</strong> ${via}<br>
+                    <strong>Número:</strong> ${numero}<br>
+                    <strong>Bairro:</strong> ${bairro}<br>
+                    <strong>Município:</strong> ${municipio}<br>
+                    <strong>CEP:</strong> ${cep}<br>
+                    <strong>Latitude:</strong> ${latitude.toFixed(6)}<br>
+                    <strong>Longitude:</strong> ${longitude.toFixed(6)}
+                </div>
+            `;
+        } else {
+            infoHtml = `
+                <div class="info-box">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <strong>📍 Localização do Visitante</strong>
+                        <button id="btnToggleLocation" style="padding: 4px 8px; font-size: 12px;">➕ Exibir</button>
+                    </div>
+                    ${via} ${numero}, ${bairro} - ${municipio}
+                </div>
+            `;
+        }
 
         if (this.addressLeft) this.addressLeft.innerHTML = infoHtml;
         if (this.addressRight) this.addressRight.innerHTML = infoHtml;
 
+        // Add event listener to toggle buttons
+        document.querySelectorAll('#btnToggleLocation').forEach(btn => {
+            btn.onclick = () => this.toggleLocationDisplay();
+        });
+
         if (this.mapContainer) {
-            this.mapContainer.innerHTML = '';
-            this.map = L.map(this.mapContainer).setView([latitude, longitude], 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap'
-            }).addTo(this.map);
-            L.marker([latitude, longitude]).addTo(this.map)
-                .bindPopup('Visitante está aqui')
-                .openPopup();
+            if (this.isExpanded) {
+                this.mapContainer.style.display = 'block';
+                if (!this.map) {
+                    this.mapContainer.innerHTML = '';
+                    this.map = L.map(this.mapContainer).setView([latitude, longitude], 15);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap'
+                    }).addTo(this.map);
+                    L.marker([latitude, longitude]).addTo(this.map)
+                        .bindPopup('Visitante está aqui')
+                        .openPopup();
+                }
+            } else {
+                this.mapContainer.style.display = 'none';
+            }
         }
+    }
+
+    toggleLocationDisplay() {
+        this.isExpanded = !this.isExpanded;
+        this.renderLocation();
     }
 }
