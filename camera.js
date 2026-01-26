@@ -68,6 +68,7 @@ export class CameraManager {
     addVideo(stream, muted = false, isLocal = false, isSender = false) {
         if (isLocal && this.localVideoAdded) return;
         if (!isLocal && !isSender && this.remoteVideoAdded) return;
+        if (isSender && this.senderVideoActive) return;
 
         const wrapper = document.createElement("div");
         wrapper.className = "video-wrapper";
@@ -79,10 +80,6 @@ export class CameraManager {
         video.muted = muted;
 
         wrapper.appendChild(video);
-        
-        if (!isLocal && !isSender) {
-            this.videosContainer.innerHTML = "";
-        }
         
         this.videosContainer.appendChild(wrapper);
 
@@ -100,6 +97,21 @@ export class CameraManager {
         } else if (isSender) {
             this.senderVideoActive = true;
             this.senderVideoElement = video;
+            
+            const btnSwitchSender = document.createElement("button");
+            btnSwitchSender.id = "btnSwitchSenderCamera";
+            btnSwitchSender.textContent = "🔄 Trocar";
+            btnSwitchSender.style.cssText = `
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                background: rgba(15,23,42,0.8);
+                font-size: 13px;
+                padding: 6px 10px;
+                z-index: 20;
+            `;
+            wrapper.appendChild(btnSwitchSender);
+            
             this.videosContainer.classList.add('dual-video');
         } else {
             this.remoteVideoAdded = true;
@@ -145,11 +157,11 @@ export class CameraManager {
     }
 
     async toggleSenderVideo(currentCall) {
-        const hasVideo = this.senderStream && this.senderStream.getVideoTracks().length;
+        const hasVideo = this.senderStream && this.senderStream.getVideoTracks().length > 0;
         
         if (!hasVideo) {
             const newStream = await navigator.mediaDevices.getUserMedia({
-                video: true,
+                video: { facingMode: "user" },
                 audio: true
             });
             
@@ -158,6 +170,12 @@ export class CameraManager {
             }
             
             this.senderStream = newStream;
+            
+            if (!this.senderVideoActive) {
+                this.addVideo(this.senderStream, true, false, true);
+            } else if (this.senderVideoElement) {
+                this.senderVideoElement.srcObject = this.senderStream;
+            }
             
             if (currentCall && currentCall.peerConnection) {
                 const videoTrack = this.senderStream.getVideoTracks()[0];
@@ -203,7 +221,54 @@ export class CameraManager {
                 });
             }
             
+            this.removeSenderVideo();
+            
             return { enabled: false };
+        }
+    }
+
+    async switchSenderCamera(currentCall) {
+        if (!this.senderStream || this.senderStream.getVideoTracks().length === 0) {
+            return;
+        }
+
+        try {
+            this.usingFrontCamera = !this.usingFrontCamera;
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: this.usingFrontCamera ? "user" : "environment" },
+                audio: true,
+            });
+
+            if (this.senderStream) {
+                this.senderStream.getTracks().forEach(t => t.stop());
+            }
+
+            this.senderStream = newStream;
+
+            if (this.senderVideoElement) {
+                this.senderVideoElement.srcObject = this.senderStream;
+            }
+
+            if (currentCall && currentCall.peerConnection) {
+                const videoTrack = this.senderStream.getVideoTracks()[0];
+                const audioTrack = this.senderStream.getAudioTracks()[0];
+                
+                const senders = currentCall.peerConnection.getSenders();
+                senders.forEach(sender => {
+                    if (sender.track) {
+                        if (sender.track.kind === "video") {
+                            sender.replaceTrack(videoTrack);
+                        } else if (sender.track.kind === "audio") {
+                            sender.replaceTrack(audioTrack);
+                        }
+                    }
+                });
+            }
+
+            return newStream;
+        } catch (err) {
+            console.error("Erro ao trocar câmera do remetente:", err);
+            throw err;
         }
     }
 }

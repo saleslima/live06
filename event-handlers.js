@@ -27,6 +27,13 @@ export class EventHandlers {
         const btnSwitchCamera = document.getElementById("btnSwitchCamera");
         btnSwitchCamera.onclick = () => this.handleSwitchCamera();
         
+        // Delegate event for sender camera switch button
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'btnSwitchSenderCamera') {
+                this.handleSwitchSenderCamera();
+            }
+        });
+        
         // Chat controls
         const btnSend = document.getElementById("btnSend");
         const messageInput = document.getElementById("messageInput");
@@ -147,6 +154,18 @@ export class EventHandlers {
                     }
                 });
             }
+        } catch (err) {
+            this.ui.setStatus("Erro ao trocar câmera", "#ef4444");
+        }
+    }
+
+    async handleSwitchSenderCamera() {
+        const params = new URLSearchParams(location.search);
+        const room = params.get("r");
+        if (room) return;
+        
+        try {
+            await this.camera.switchSenderCamera(this.peerConnection.currentCall);
         } catch (err) {
             this.ui.setStatus("Erro ao trocar câmera", "#ef4444");
         }
