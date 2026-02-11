@@ -74,35 +74,17 @@ export class EventHandlers {
         
         // Chat toggle
         const btnToggleChat = document.getElementById("btnToggleChat");
-        const chatMessages = document.getElementById("chatMessages");
-        const chatInput = document.getElementById("chatInput");
+        const chat = document.getElementById("chat");
         
         btnToggleChat.onclick = () => {
-            if (chatMessages.style.display === 'none') {
-                chatMessages.style.display = 'block';
-                chatInput.style.display = 'flex';
-                btnToggleChat.textContent = '➖';
+            if (chat.style.display === 'none') {
+                chat.style.display = 'flex';
+                btnToggleChat.textContent = '➖ Ocultar Chat';
             } else {
-                chatMessages.style.display = 'none';
-                chatInput.style.display = 'none';
-                btnToggleChat.textContent = '➕';
+                chat.style.display = 'none';
+                btnToggleChat.textContent = '➕ Mostrar Chat';
             }
         };
-
-        // Font color toggle (sender only)
-        const btnToggleFontColor = document.getElementById("btnToggleFontColor");
-        const params = new URLSearchParams(window.location.search);
-        const isRecipient = params.get("r");
-        
-        if (isRecipient) {
-            btnToggleFontColor.style.display = 'none';
-        } else {
-            btnToggleFontColor.onclick = () => {
-                const isDark = this.chat.toggleFontColor();
-                btnToggleFontColor.textContent = isDark ? '⬜' : '⬛';
-                btnToggleFontColor.title = isDark ? 'Fonte preta' : 'Fonte branca';
-            };
-        }
     }
 
     handleGenerateLink() {

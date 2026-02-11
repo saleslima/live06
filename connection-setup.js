@@ -46,9 +46,9 @@ export class ConnectionSetup {
                     cep: data.cep || ''
                 });
             } else if (data.type === 'chat') {
-                this.chat.receiveMessage(data.message, data.darkFont);
+                this.chat.receiveMessage(data.message);
             } else if (data.type === 'image') {
-                this.chat.receiveImage(data.dataUrl, data.darkFont);
+                this.chat.receiveImage(data.dataUrl);
             }
         });
     }
@@ -127,9 +127,9 @@ export class ConnectionSetup {
             
             this.peerConnection.onData((data) => {
                 if (data.type === 'chat') {
-                    this.chat.receiveMessage(data.message, data.darkFont);
+                    this.chat.receiveMessage(data.message);
                 } else if (data.type === 'image') {
-                    this.chat.receiveImage(data.dataUrl, data.darkFont);
+                    this.chat.receiveImage(data.dataUrl);
                 } else if (data.type === 'stop_camera') {
                     this.camera.stopLocalCamera();
                     this.ui.setStatus('Câmera encerrada pelo remetente.');

@@ -149,22 +149,8 @@ video {
     padding: 8px;
     border-radius: 6px 6px 0 0;
     font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     pointer-events: auto;
     margin-bottom: 4px;
-}
-
-#chatHeader > div {
-    display: flex;
-    gap: 4px;
-}
-
-#chatHeader button {
-    padding: 4px 8px;
-    font-size: 12px;
-    margin: 0;
 }
 #chatMessages {
     flex: 1;
@@ -180,11 +166,6 @@ video {
     color: #ffffff;
     text-shadow: 0 0 4px rgba(0,0,0,0.8);
     font-size: 14px;
-}
-
-.message.dark-font {
-    color: #000000;
-    text-shadow: 0 0 4px rgba(255,255,255,0.8);
 }
 .message.sent {
     margin-left: 20px;

@@ -6,17 +6,15 @@ export class ChatManager {
         this.chatMessages = document.getElementById("chatMessages");
         this.messageInput = document.getElementById("messageInput");
         this.chatBox = document.getElementById("chat");
-        this.darkFont = false;
     }
 
     sendMessage(text) {
         if (!text.trim()) return;
         
-        this.peerConnection.sendData({ type: 'chat', message: text, darkFont: this.darkFont });
+        this.peerConnection.sendData({ type: 'chat', message: text });
         
         const msgDiv = document.createElement('div');
         msgDiv.className = 'message sent';
-        if (this.darkFont) msgDiv.classList.add('dark-font');
         msgDiv.innerHTML = '⚡ ' + this.escapeHtml(text);
         this.chatMessages.appendChild(msgDiv);
         this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
@@ -29,13 +27,12 @@ export class ChatManager {
         const reader = new FileReader();
         reader.onload = () => {
             const dataUrl = reader.result;
-            this.peerConnection.sendData({ type: 'image', dataUrl, darkFont: this.darkFont });
+            this.peerConnection.sendData({ type: 'image', dataUrl });
             
             this.removeExistingImages();
 
             const msgDiv = document.createElement('div');
             msgDiv.className = 'message sent';
-            if (this.darkFont) msgDiv.classList.add('dark-font');
             const img = document.createElement('img');
             img.src = dataUrl;
             msgDiv.appendChild(img);
@@ -45,20 +42,18 @@ export class ChatManager {
         reader.readAsDataURL(file);
     }
 
-    receiveMessage(text, darkFont = false) {
+    receiveMessage(text) {
         const msgDiv = document.createElement('div');
         msgDiv.className = 'message received';
-        if (darkFont) msgDiv.classList.add('dark-font');
         msgDiv.innerHTML = '🎧 ' + this.escapeHtml(text);
         this.chatMessages.appendChild(msgDiv);
         this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
     }
 
-    receiveImage(dataUrl, darkFont = false) {
+    receiveImage(dataUrl) {
         this.removeExistingImages();
         const msgDiv = document.createElement('div');
         msgDiv.className = 'message received';
-        if (darkFont) msgDiv.classList.add('dark-font');
         const img = document.createElement('img');
         img.src = dataUrl;
         msgDiv.appendChild(img);
@@ -70,11 +65,6 @@ export class ChatManager {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
-    }
-
-    toggleFontColor() {
-        this.darkFont = !this.darkFont;
-        return this.darkFont;
     }
 
     removeExistingImages() {

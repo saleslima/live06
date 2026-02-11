@@ -67,6 +67,15 @@ export class UIManager {
     }
 
     hideControlsForRecipient() {
+        // Hide all control buttons
+        const controlButtons = document.getElementById("controlButtons");
+        if (controlButtons) controlButtons.style.display = 'none';
+        
+        // Hide toggle controls button
+        const btnToggleControls = document.getElementById("btnToggleControls");
+        if (btnToggleControls) btnToggleControls.style.display = 'none';
+        
+        // Hide individual buttons
         this.btnLink.style.display = 'none';
         this.btnCopy.style.display = 'none';
         this.btnDeleteLink.style.display = 'none';
@@ -76,6 +85,9 @@ export class UIManager {
         this.btnSendSMS.style.display = 'none';
         this.recipientPhone.style.display = 'none';
         this.linkDiv.style.display = 'none';
+        
+        const btnToggleChat = document.getElementById("btnToggleChat");
+        if (btnToggleChat) btnToggleChat.style.display = 'none';
         
         const btnReload = document.getElementById("btnReload");
         if (btnReload) btnReload.style.display = 'inline-block';
