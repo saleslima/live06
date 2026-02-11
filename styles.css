@@ -14,6 +14,19 @@ header {
     padding: 10px;
     text-align: center;
 }
+
+#btnToggleControls {
+    background: #334155;
+    margin-bottom: 8px;
+}
+
+#controlButtons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    align-items: center;
+}
 button {
     padding: 10px 16px;
     border: none;
@@ -93,7 +106,23 @@ video {
 #videos.dual-video video {
     width: 100%;
     height: 100%;
+    max-height: 400px;
     object-fit: cover;
+}
+
+@media (min-width: 769px) {
+    #videos.dual-video {
+        height: 400px;
+    }
+
+    video {
+        width: 100%;
+        height: auto;
+    }
+
+    .video-wrapper {
+        width: 100%;
+    }
 }
 .status {
     font-size: 13px;
@@ -116,7 +145,21 @@ video {
     pointer-events: none;
 }
 #chatHeader {
-    display: none;
+    background: rgba(15,23,42,0.9);
+    padding: 8px;
+    border-radius: 6px 6px 0 0;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: auto;
+    margin-bottom: 4px;
+}
+
+#chatHeader button {
+    padding: 4px 8px;
+    font-size: 12px;
+    margin: 0;
 }
 #chatMessages {
     flex: 1;
@@ -176,10 +219,16 @@ video {
         height: calc(100vh - 160px);
         box-sizing: border-box;
     }
-    #leftPane,
+    #leftPane {
+        flex: 0 0 40%;
+        max-width: 40%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
     #rightPane {
-        flex: 1;
-        max-width: 50%;
+        flex: 0 0 60%;
+        max-width: 60%;
         overflow: auto;
         display: flex;
         flex-direction: column;
@@ -189,11 +238,21 @@ video {
         position: relative;
         display: flex;
         flex-direction: column;
+        overflow: hidden;
     }
     #videos {
         flex: 1;
+        position: relative;
     }
-    #addressLeft,
+    #chat {
+        position: absolute;
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+    }
+    #addressLeft {
+        display: none;
+    }
     #addressRight {
         margin-top: 10px;
     }
@@ -216,6 +275,10 @@ video {
 }
 
 @media (max-width: 768px) {
+    #controlButtons {
+        flex-direction: column;
+    }
+    
     #controls {
         padding: 10px 5px;
     }

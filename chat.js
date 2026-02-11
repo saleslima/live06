@@ -6,7 +6,6 @@ export class ChatManager {
         this.chatMessages = document.getElementById("chatMessages");
         this.messageInput = document.getElementById("messageInput");
         this.chatBox = document.getElementById("chat");
-        this.chatVisible = true;
     }
 
     sendMessage(text) {
@@ -29,6 +28,8 @@ export class ChatManager {
         reader.onload = () => {
             const dataUrl = reader.result;
             this.peerConnection.sendData({ type: 'image', dataUrl });
+            
+            this.removeExistingImages();
 
             const msgDiv = document.createElement('div');
             msgDiv.className = 'message sent';
@@ -42,15 +43,6 @@ export class ChatManager {
     }
 
     receiveMessage(text) {
-        if (!this.chatVisible) {
-            this.chatBox.style.display = 'flex';
-            this.chatVisible = true;
-            const btnToggleChat = document.getElementById("btnToggleChat");
-            if (btnToggleChat) {
-                btnToggleChat.textContent = '💬 Ocultar Chat';
-            }
-        }
-
         const msgDiv = document.createElement('div');
         msgDiv.className = 'message received';
         msgDiv.textContent = text;
@@ -59,6 +51,7 @@ export class ChatManager {
     }
 
     receiveImage(dataUrl) {
+        this.removeExistingImages();
         const msgDiv = document.createElement('div');
         msgDiv.className = 'message received';
         const img = document.createElement('img');
@@ -68,10 +61,12 @@ export class ChatManager {
         this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
     }
 
-    toggleChat() {
-        this.chatVisible = !this.chatVisible;
-        this.chatBox.style.display = this.chatVisible ? 'flex' : 'none';
-        const btnToggleChat = document.getElementById("btnToggleChat");
-        btnToggleChat.textContent = this.chatVisible ? '💬 Ocultar Chat' : '💬 Mostrar Chat';
+    removeExistingImages() {
+        const messages = this.chatMessages.querySelectorAll('.message');
+        messages.forEach(msg => {
+            if (msg.querySelector('img')) {
+                msg.remove();
+            }
+        });
     }
 }

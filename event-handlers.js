@@ -11,6 +11,19 @@ export class EventHandlers {
     }
 
     setupEventListeners() {
+        // Toggle controls visibility
+        const btnToggleControls = document.getElementById("btnToggleControls");
+        const controlButtons = document.getElementById("controlButtons");
+        btnToggleControls.onclick = () => {
+            if (controlButtons.style.display === 'none') {
+                controlButtons.style.display = 'flex';
+                btnToggleControls.textContent = '➖ Ocultar Botões';
+            } else {
+                controlButtons.style.display = 'none';
+                btnToggleControls.textContent = '➕ Mostrar Botões';
+            }
+        };
+        
         // Link management buttons
         this.ui.btnLink.onclick = () => this.handleGenerateLink();
         this.ui.btnCopy.onclick = () => this.handleCopyLink();
@@ -22,22 +35,17 @@ export class EventHandlers {
         
         // Video controls
         this.ui.btnRecord.onclick = () => this.handleRecord();
-        this.ui.btnMyVideo.onclick = () => this.handleMyVideo();
+        this.ui.btnBlur.onclick = () => this.handleBlur();
         
         const btnSwitchCamera = document.getElementById("btnSwitchCamera");
         btnSwitchCamera.onclick = () => this.handleSwitchCamera();
         
-        // Delegate event for sender camera switch button
-        document.addEventListener('click', (e) => {
-            if (e.target.id === 'btnSwitchSenderCamera') {
-                this.handleSwitchSenderCamera();
-            }
-        });
+        const btnReload = document.getElementById("btnReload");
+        btnReload.onclick = () => location.reload();
         
         // Chat controls
         const btnSend = document.getElementById("btnSend");
         const messageInput = document.getElementById("messageInput");
-        const btnToggleChat = document.getElementById("btnToggleChat");
         const btnImage = document.getElementById("btnImage");
         const imageInput = document.getElementById("imageInput");
         
@@ -48,8 +56,6 @@ export class EventHandlers {
                 this.chat.sendMessage(messageInput.value);
             }
         });
-        
-        btnToggleChat.onclick = () => this.chat.toggleChat();
         
         btnImage.onclick = () => imageInput.click();
         
@@ -65,6 +71,23 @@ export class EventHandlers {
             }
             imageInput.value = '';
         });
+        
+        // Chat toggle
+        const btnToggleChat = document.getElementById("btnToggleChat");
+        const chatMessages = document.getElementById("chatMessages");
+        const chatInput = document.getElementById("chatInput");
+        
+        btnToggleChat.onclick = () => {
+            if (chatMessages.style.display === 'none') {
+                chatMessages.style.display = 'block';
+                chatInput.style.display = 'flex';
+                btnToggleChat.textContent = '➖';
+            } else {
+                chatMessages.style.display = 'none';
+                chatInput.style.display = 'none';
+                btnToggleChat.textContent = '➕';
+            }
+        };
     }
 
     handleGenerateLink() {
@@ -79,9 +102,10 @@ export class EventHandlers {
         if (!this.ui.generatedLink) return;
 
         try {
+            this.peerConnection.sendData({ type: 'link_deleted' });
             this.peerConnection.sendData({ type: 'stop_camera' });
         } catch (e) {
-            console.error("Erro ao enviar comando de stop_camera:", e);
+            console.error("Erro ao enviar comandos:", e);
         }
 
         localStorage.removeItem("livecam_link");
@@ -94,11 +118,10 @@ export class EventHandlers {
         this.ui.btnDeleteLink.disabled = true;
         this.ui.setStatus("Link excluído. Recarregando para gerar um novo...");
         
-        try {
-            this.peerConnection.destroy();
-        } catch (e) {}
-        
         setTimeout(() => {
+            try {
+                this.peerConnection.destroy();
+            } catch (e) {}
             location.reload();
         }, 500);
     }
@@ -108,66 +131,37 @@ export class EventHandlers {
             this.ui.startRecording(this.camera.remoteVideoElement.srcObject);
         } else if (this.ui.isRecording) {
             this.ui.stopRecording();
-            try {
-                this.peerConnection.sendData({ type: 'stop_camera' });
-            } catch (e) {
-                console.error("Erro ao enviar comando de stop_camera ao parar gravação:", e);
-            }
         }
     }
 
-    async handleMyVideo() {
-        const params = new URLSearchParams(location.search);
-        const room = params.get("r");
-        if (room) return;
-        
-        try {
-            const result = await this.camera.toggleSenderVideo(this.peerConnection.currentCall);
-            
-            if (!result.enabled) {
-                this.peerConnection.sendData({ type: 'sender_video_stopped' });
-            }
-            
-            this.ui.updateMyVideoButton(result.enabled);
-        } catch (err) {
-            console.error("Erro ao alternar vídeo:", err);
-            this.ui.setStatus("Erro ao alternar vídeo", "#ef4444");
-        }
+    handleBlur() {
+        this.ui.toggleBlur(this.camera.remoteVideoElement);
     }
 
     async handleSwitchCamera() {
-        const params = new URLSearchParams(location.search);
-        const room = params.get("r");
-        if (!room) return;
-        
         try {
             const newStream = await this.camera.switchCamera();
             
             if (this.peerConnection.currentCall && this.peerConnection.currentCall.peerConnection) {
                 const videoTrack = newStream.getVideoTracks()[0];
                 const audioTrack = newStream.getAudioTracks()[0];
-                this.peerConnection.currentCall.peerConnection.getSenders().forEach(sender => {
-                    if (sender.track && sender.track.kind === "video") {
-                        sender.replaceTrack(videoTrack);
-                    } else if (sender.track && sender.track.kind === "audio") {
-                        sender.replaceTrack(audioTrack);
+                
+                const senders = this.peerConnection.currentCall.peerConnection.getSenders();
+                for (const sender of senders) {
+                    if (sender.track && sender.track.kind === 'audio') {
+                        if (audioTrack) await sender.replaceTrack(audioTrack).catch(e => console.error("Erro replace audio:", e));
+                    } else {
+                        // Se for track de vídeo ou nula (assumimos ser o sender de vídeo), substitui
+                        if (videoTrack) await sender.replaceTrack(videoTrack).catch(e => console.error("Erro replace video:", e));
                     }
-                });
+                }
+                
+                this.ui.setStatus("Câmera trocada");
             }
         } catch (err) {
+            console.error("Erro ao trocar câmera:", err);
             this.ui.setStatus("Erro ao trocar câmera", "#ef4444");
         }
     }
 
-    async handleSwitchSenderCamera() {
-        const params = new URLSearchParams(location.search);
-        const room = params.get("r");
-        if (room) return;
-        
-        try {
-            await this.camera.switchSenderCamera(this.peerConnection.currentCall);
-        } catch (err) {
-            this.ui.setStatus("Erro ao trocar câmera", "#ef4444");
-        }
-    }
 }

@@ -9,9 +9,10 @@ export class UIManager {
         this.btnDeleteLink = document.getElementById("btnDeleteLink");
         this.btnSendWhatsApp = document.getElementById("btnSendWhatsApp");
         this.btnSendSMS = document.getElementById("btnSendSMS");
-        this.btnMyVideo = document.getElementById("btnMyVideo");
         this.btnRecord = document.getElementById("btnRecord");
+        this.btnBlur = document.getElementById("btnBlur");
         this.recipientPhone = document.getElementById("recipientPhone");
+        this.isBlurred = false;
         this.generatedLink = "";
         this.whatsappWindow = null;
         this.isRecording = false;
@@ -69,12 +70,15 @@ export class UIManager {
         this.btnLink.style.display = 'none';
         this.btnCopy.style.display = 'none';
         this.btnDeleteLink.style.display = 'none';
-        this.btnMyVideo.style.display = 'none';
         this.btnRecord.style.display = 'none';
+        this.btnBlur.style.display = 'none';
         this.btnSendWhatsApp.style.display = 'none';
         this.btnSendSMS.style.display = 'none';
         this.recipientPhone.style.display = 'none';
         this.linkDiv.style.display = 'none';
+        
+        const btnReload = document.getElementById("btnReload");
+        if (btnReload) btnReload.style.display = 'inline-block';
     }
 
     setStatus(message, color = null) {
@@ -110,10 +114,8 @@ export class UIManager {
         const message = encodeURIComponent(`Acesse este link: ${this.generatedLink}`);
         const url = `https://wa.me/${phone}?text=${message}`;
 
-        if (!this.whatsappWindow || this.whatsappWindow.closed) {
-            this.whatsappWindow = window.open(url, 'whatsappWindow');
-        } else {
-            this.whatsappWindow.location.href = url;
+        this.whatsappWindow = window.open(url, 'whatsappWindow');
+        if (this.whatsappWindow) {
             this.whatsappWindow.focus();
         }
     }
@@ -145,7 +147,14 @@ export class UIManager {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `gravacao_${Date.now()}.webm`;
+            
+            // Get phone number and format date
+            const phone = this.recipientPhone.value.replace(/\D/g, '') || 'sem-numero';
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
+            const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-'); // HH-MM-SS
+            
+            a.download = `${phone}_${dateStr}_${timeStr}.webm`;
             a.click();
             this.setStatus('Gravação salva!');
         };
@@ -166,15 +175,20 @@ export class UIManager {
         }
     }
 
-    updateMyVideoButton(enabled) {
-        if (enabled) {
-            this.btnMyVideo.textContent = '📹 Parar Meu Vídeo';
-            this.btnMyVideo.style.background = '#ef4444';
-            this.setStatus('Compartilhando seu vídeo...');
+    toggleBlur(remoteVideoElement) {
+        if (!remoteVideoElement) return;
+        
+        this.isBlurred = !this.isBlurred;
+        
+        if (this.isBlurred) {
+            remoteVideoElement.style.filter = 'blur(20px)';
+            this.btnBlur.textContent = '🔓 Remover Desfoque';
+            this.setStatus('Vídeo desfocado na tela');
         } else {
-            this.btnMyVideo.textContent = '📹 Meu Vídeo';
-            this.btnMyVideo.style.background = '#0b5cff';
-            this.setStatus('Vídeo desativado');
+            remoteVideoElement.style.filter = 'none';
+            this.btnBlur.textContent = '🔒 Desfocar Vídeo';
+            this.setStatus('Desfoque removido');
         }
     }
+
 }
