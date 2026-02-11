@@ -88,6 +88,21 @@ export class EventHandlers {
                 btnToggleChat.textContent = '➕';
             }
         };
+
+        // Font color toggle (sender only)
+        const btnToggleFontColor = document.getElementById("btnToggleFontColor");
+        const params = new URLSearchParams(window.location.search);
+        const isRecipient = params.get("r");
+        
+        if (isRecipient) {
+            btnToggleFontColor.style.display = 'none';
+        } else {
+            btnToggleFontColor.onclick = () => {
+                const isDark = this.chat.toggleFontColor();
+                btnToggleFontColor.textContent = isDark ? '⬜' : '⬛';
+                btnToggleFontColor.title = isDark ? 'Fonte preta' : 'Fonte branca';
+            };
+        }
     }
 
     handleGenerateLink() {

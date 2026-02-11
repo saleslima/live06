@@ -100,7 +100,14 @@ export class CameraManager {
         video.autoplay = true;
         video.playsInline = true;
         video.muted = muted;
-        video.style.display = 'block';
+        
+        // Ensure video tracks are displayed
+        const videoTracks = stream.getVideoTracks();
+        if (videoTracks && videoTracks.length > 0) {
+            video.style.display = 'block';
+        } else {
+            video.style.display = 'none';
+        }
 
         wrapper.appendChild(video);
         
@@ -121,6 +128,13 @@ export class CameraManager {
             this.remoteVideoAdded = true;
             this.remoteVideoElement = video;
         }
+
+        // Force video to play on mobile
+        video.play().catch(err => {
+            console.log("Autoplay prevented, trying muted:", err);
+            video.muted = true;
+            video.play().catch(e => console.error("Video play failed:", e));
+        });
 
         return video;
     }

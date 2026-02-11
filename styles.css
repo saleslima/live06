@@ -156,6 +156,11 @@ video {
     margin-bottom: 4px;
 }
 
+#chatHeader > div {
+    display: flex;
+    gap: 4px;
+}
+
 #chatHeader button {
     padding: 4px 8px;
     font-size: 12px;
@@ -175,6 +180,11 @@ video {
     color: #ffffff;
     text-shadow: 0 0 4px rgba(0,0,0,0.8);
     font-size: 14px;
+}
+
+.message.dark-font {
+    color: #000000;
+    text-shadow: 0 0 4px rgba(255,255,255,0.8);
 }
 .message.sent {
     margin-left: 20px;

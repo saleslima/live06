@@ -46,9 +46,9 @@ export class ConnectionSetup {
                     cep: data.cep || ''
                 });
             } else if (data.type === 'chat') {
-                this.chat.receiveMessage(data.message);
+                this.chat.receiveMessage(data.message, data.darkFont);
             } else if (data.type === 'image') {
-                this.chat.receiveImage(data.dataUrl);
+                this.chat.receiveImage(data.dataUrl, data.darkFont);
             }
         });
     }
@@ -58,13 +58,6 @@ export class ConnectionSetup {
             // Check if recipient had video enabled
             const recipientVideoEnabled = localStorage.getItem("livecam_recipientVideo") !== "false";
             
-            if (recipientVideoEnabled) {
-                await this.camera.startCamera();
-            } else {
-                await this.camera.startAudioOnly();
-            }
-            this.ui.setStatus("Conectando...");
-            
             const params = new URLSearchParams(window.location.search);
             const room = params.get("r");
             
@@ -73,12 +66,19 @@ export class ConnectionSetup {
                 return;
             }
 
-            // Add error handler before making call
+            // Add error handler BEFORE starting camera or making call
             this.peerConnection.onError((err) => {
                 console.error("Peer error:", err);
                 this.ui.setStatus("Erro: Link inválido ou expirado. Recarregue a página.", "#ef4444");
                 this.camera.stopLocalCamera();
             });
+
+            if (recipientVideoEnabled) {
+                await this.camera.startCamera();
+            } else {
+                await this.camera.startAudioOnly();
+            }
+            this.ui.setStatus("Conectando...");
 
             const call = this.peerConnection.call(room, this.camera.localStream);
             this.peerConnection.currentCall = call;
@@ -127,9 +127,9 @@ export class ConnectionSetup {
             
             this.peerConnection.onData((data) => {
                 if (data.type === 'chat') {
-                    this.chat.receiveMessage(data.message);
+                    this.chat.receiveMessage(data.message, data.darkFont);
                 } else if (data.type === 'image') {
-                    this.chat.receiveImage(data.dataUrl);
+                    this.chat.receiveImage(data.dataUrl, data.darkFont);
                 } else if (data.type === 'stop_camera') {
                     this.camera.stopLocalCamera();
                     this.ui.setStatus('Câmera encerrada pelo remetente.');
